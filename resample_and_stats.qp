@@ -1,0 +1,148 @@
+OutputFolder: OUTDIR/stats
+Debug: False
+
+Processing:
+  - Load:
+      data:
+        # Parameter maps <variable>_[<method>]
+        t1.nii.gz:
+        t2star_loglin.nii.gz:
+        r2star_loglin.nii.gz:
+        t2star_exp.nii.gz:
+        r2star_exp.nii.gz:
+      rois:
+        # Segmentations seg_<organ>_<segmentation name>
+        seg_kidney_medulla_l_t1.nii.gz:
+        seg_kidney_cortex_l_t1.nii.gz:
+        seg_kidney_medulla_r_t1.nii.gz:
+        seg_kidney_cortex_r_t1.nii.gz:
+
+  - Resample:
+      data: seg_kidney_medulla_l_t1
+      type: data
+      grid: t2star_loglin
+      order: 0
+      output-name: seg_kidney_medulla_l_t1_regrid_t2star
+
+  - Resample:
+      data: seg_kidney_cortex_l_t1
+      type: data
+      grid: t2star_loglin
+      order: 0
+      output-name: seg_kidney_cortex_l_t1_regrid_t2star
+
+  - Resample:
+      data: seg_kidney_medulla_r_t1
+      type: data
+      grid: t2star_loglin
+      order: 0
+      output-name: seg_kidney_medulla_r_t1_regrid_t2star
+
+  - Resample:
+      data: seg_kidney_cortex_r_t1
+      type: data
+      grid: t2star_loglin
+      order: 0
+      output-name: seg_kidney_cortex_r_t1_regrid_t2star
+
+  - CalcVolumes:
+      rois:
+       - seg_kidney_medulla_l_t1
+       - seg_kidney_cortex_l_t1
+       - seg_kidney_medulla_l_t1_regrid_t2star
+       - seg_kidney_cortex_l_t1_regrid_t2star
+       - seg_kidney_medulla_r_t1
+       - seg_kidney_cortex_r_t1
+       - seg_kidney_medulla_r_t1_regrid_t2star
+       - seg_kidney_cortex_r_t1_regrid_t2star
+      units: ml
+      output-name: seg_volumes
+
+  - DataStatistics:
+      roi: seg_kidney_medulla_l_t1
+      data: 
+       - t1
+       - t2star_loglin
+       - t2star_exp
+       - r2star_loglin
+       - r2star_exp
+      data-limits:
+        t1 : [800, 2000]
+        t2star_loglin : [20, 120]
+        t2star_exp : [20, 120]
+        r2star_loglin : [8, 50]
+        r2star_exp : [8, 50]
+      stats: all
+      exact-median: True
+      output-name: kidney_medulla_l_t1_stats
+
+  - DataStatistics:
+      roi: seg_kidney_medulla_r_t1
+      data: 
+       - t1
+       - t2star_loglin
+       - t2star_exp
+       - r2star_loglin
+       - r2star_exp
+      data-limits:
+        t1 : [800, 2000]
+        t2star_loglin : [20, 120]
+        t2star_exp : [20, 120]
+        r2star_loglin : [8, 50]
+        r2star_exp : [8, 50]
+      stats: all
+      exact-median: True
+      output-name: kidney_medulla_r_t1_stats
+
+  - DataStatistics:
+      roi: seg_kidney_cortex_l_t1
+      data: 
+       - t1
+       - t2star_loglin
+       - t2star_exp
+       - r2star_loglin
+       - r2star_exp
+      data-limits:
+        t1 : [800, 2000]
+        t2star_loglin : [20, 120]
+        t2star_exp : [20, 120]
+        r2star_loglin : [8, 50]
+        r2star_exp : [8, 50]
+      stats: all
+      exact-median: True
+      output-name: kidney_cortex_l_t1_stats
+
+  - DataStatistics:
+      roi: seg_kidney_cortex_r_t1
+      data: 
+       - t1
+       - t2star_loglin
+       - t2star_exp
+       - r2star_loglin
+       - r2star_exp
+      data-limits:
+        t1 : [800, 2000]
+        t2star_loglin : [20, 120]
+        t2star_exp : [20, 120]
+        r2star_loglin : [8, 50]
+        r2star_exp : [8, 50]
+      stats: all
+      exact-median: True
+      output-name: kidney_cortex_r_t1_stats
+
+  - Save:
+      seg_kidney_medulla_l_t1_regrid_t2star:
+      seg_kidney_medulla_r_t1_regrid_t2star:
+      seg_kidney_cortex_l_t1_regrid_t2star:
+      seg_kidney_cortex_r_t1_regrid_t2star:
+
+  - SaveExtras:
+      kidney_medulla_l_t1_stats: kidney_medulla_l_t1_stats.tsv
+      kidney_cortex_l_t1_stats: kidney_cortex_l_t1_stats.tsv
+      kidney_medulla_r_t1_stats: kidney_medulla_r_t1_stats.tsv
+      kidney_cortex_r_t1_stats: kidney_cortex_r_t1_stats.tsv
+      seg_volumes: seg_volumes.tsv
+
+Cases:
+  SUBJID:
+    Folder: OUTDIR/SUBJID/qpdata/
