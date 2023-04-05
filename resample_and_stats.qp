@@ -16,6 +16,9 @@ Processing:
         seg_kidney_cortex_l_t1.nii.gz:
         seg_kidney_medulla_r_t1.nii.gz:
         seg_kidney_cortex_r_t1.nii.gz:
+        seg_kidney_r_t2w.nii.gz:
+        seg_kidney_l_t2w.nii.gz:
+        seg_kidney_t2w.nii.gz:
 
   - Resample:
       data: seg_kidney_medulla_l_t1
@@ -55,6 +58,9 @@ Processing:
        - seg_kidney_cortex_r_t1
        - seg_kidney_medulla_r_t1_regrid_t2star
        - seg_kidney_cortex_r_t1_regrid_t2star
+       - seg_kidney_l_t2w
+       - seg_kidney_r_t2w
+       - seg_kidney_t2w
       units: ml
       output-name: seg_volumes
 
@@ -67,11 +73,11 @@ Processing:
        - r2star_loglin
        - r2star_exp
       data-limits:
-        t1 : [800, 2000]
-        t2star_loglin : [20, 120]
-        t2star_exp : [20, 120]
-        r2star_loglin : [8, 50]
-        r2star_exp : [8, 50]
+        t1 : [1100, 2300]
+        t2star_loglin : [5, 100]
+        t2star_exp : [5, 100]
+        r2star_loglin : [10, 200]
+        r2star_exp : [10, 200]
       stats: all
       exact-median: True
       output-name: kidney_medulla_l_t1_stats
@@ -85,11 +91,11 @@ Processing:
        - r2star_loglin
        - r2star_exp
       data-limits:
-        t1 : [800, 2000]
-        t2star_loglin : [20, 120]
-        t2star_exp : [20, 120]
-        r2star_loglin : [8, 50]
-        r2star_exp : [8, 50]
+        t1 : [1100, 2300]
+        t2star_loglin : [5, 100]
+        t2star_exp : [5, 100]
+        r2star_loglin : [10, 200]
+        r2star_exp : [10, 200]
       stats: all
       exact-median: True
       output-name: kidney_medulla_r_t1_stats
@@ -103,11 +109,11 @@ Processing:
        - r2star_loglin
        - r2star_exp
       data-limits:
-        t1 : [800, 2000]
-        t2star_loglin : [20, 120]
-        t2star_exp : [20, 120]
-        r2star_loglin : [8, 50]
-        r2star_exp : [8, 50]
+        t1 : [1100, 2300]
+        t2star_loglin : [5, 100]
+        t2star_exp : [5, 100]
+        r2star_loglin : [10, 200]
+        r2star_exp : [10, 200]
       stats: all
       exact-median: True
       output-name: kidney_cortex_l_t1_stats
@@ -121,11 +127,11 @@ Processing:
        - r2star_loglin
        - r2star_exp
       data-limits:
-        t1 : [800, 2000]
-        t2star_loglin : [20, 120]
-        t2star_exp : [20, 120]
-        r2star_loglin : [8, 50]
-        r2star_exp : [8, 50]
+        t1 : [1100, 2300]
+        t2star_loglin : [5, 100]
+        t2star_exp : [5, 100]
+        r2star_loglin : [10, 200]
+        r2star_exp : [10, 200]
       stats: all
       exact-median: True
       output-name: kidney_cortex_r_t1_stats
