@@ -9,6 +9,7 @@ import subprocess
 import sys
 import traceback
 
+import numpy as np
 import nibabel as nib
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -23,65 +24,47 @@ class ArgumentParser(argparse.ArgumentParser):
         self.add_argument("--skip-stats", action='store_true', default=False, help="Skip statistics generation")
         self.add_argument("--seg-models-dir", default="/spmstore/project/RenalMRI/cmore_trained_models", help="Directory contained trained segmentation models")
 
-def link(srcdir, srcfile, destdir, destfile):
+def link(srcdir, srcfile, destdir, destfile, multiple_ok=False):
     """
     Link supporting wildcards
     """
     srcfiles = list(glob.glob(os.path.join(srcdir, f"{srcfile}.nii.gz")))
     if not srcfiles:
         print(f"WARNING: Could not create link for output file {destfile} - source file {srcfile} not found")
-    elif len(srcfiles) > 1:
+    elif len(srcfiles) > 1 and not multiple_ok:
         print(f"WARNING: Could not create link for output file {destfile} - multiple source files {srcfile} found")
     else:
         os.symlink(os.path.abspath(srcfiles[0]), os.path.join(destdir, f"{destfile}.nii.gz"))
 
-def get_preproc_subjid(preproc_basedir):
+def handle_r2star_t2star(indir):
     """
-    Get the subject ID which is only visible after preprocessing
-
-    :return: tuple of subject ID, full preproc dir path
-    """
-    preproc_files = os.listdir(preproc_basedir)
-    if not preproc_files:
-        raise RuntimeError(f"No preprocessing files found in {preproc_basedir}")
-    elif len(preproc_files) > 1:
-        raise RuntimeError(f"Multiple preprocessing files found in {preproc_basedir} - cannot identify subject ID")
-    else:
-        return preproc_files[0], os.path.join(preproc_basedir, preproc_files[0])
-
-def r2star_to_t2star(indir):
-    """
-    Calculate T2* for any R2* maps found in indir
+    Make sure R2* units are in s^-1 and calculate T2* from R2* if missing
     """
     for root, dirs, files in os.walk(indir):
         for f in files:
             if "r2star" in f:
                 f_r2star = os.path.join(root, f)
+                try:
+                    nii_r2star = nib.load(f_r2star)
+                    data_r2star = nii_r2star.get_fdata()
+                    med = np.median(data_r2star)
+                    if med < 1:
+                        print(f"R2* data median {med} - assuming ms^-1, converting to s^-1")
+                        nii_r2star = nib.Nifti1Image(1000.0 * data_r2star, None, nii_r2star.header)
+                        nii_r2star.to_filename(f_r2star)
+                except:
+                    print(f"WARNING: Failed to correct R2* units for file: {f_r2star}")
+                    traceback.print_exc()
+
                 f_t2star = f_r2star.replace("r2star", "t2star")
                 if not os.path.exists(f_t2star):
+                    print(f"T2* not found for R2* file {f_r2star} - creating")
                     try:
-                        nii_r2star = nib.load(f_r2star)
                         nii_t2star = nib.Nifti1Image(1000.0/nii_r2star.get_fdata(), None, nii_r2star.header)
                         nii_t2star.to_filename(f_t2star)
                     except:
                         print(f"WARNING: Failed to calculate T2* for R2* file: {f_r2star}")
                         traceback.print_exc()
-
-def correct_r2star_units(indir):
-    """
-    Convert R2* output from ms^-1 to s^-1 for any T2* maps found in indir
-    """
-    for root, dirs, files in os.walk(indir):
-        for f in files:
-            if "r2star" in f:
-                fname = os.path.join(root, f)
-                try:
-                    nii_r2star = nib.load(fname)
-                    nii_r2star = nib.Nifti1Image(1000.0 * nii_r2star.get_fdata(), None, nii_r2star.header)
-                    nii_r2star.to_filename(fname)
-                except:
-                    print(f"WARNING: Failed to correct T2* units for file: {fname}")
-                    traceback.print_exc()
 
 def run(cmd, logfile):
     """
@@ -131,10 +114,9 @@ def main():
                  '--indir', subjdir,
                  '--outdir', f'{outdir}/renal_preproc',
                  '--single-session',
-                 '--segmentation-weights', 'model',
+                 '--segmentation-weights', model,
                  '--overwrite'], logfile=f'{outdir}/renal_logfile.txt')
-            r2star_to_t2star(outdir)
-            correct_r2star_units(outdir)
+            handle_r2star_t2star(outdir)
             print(f"DONE renal preprocessing for subject {subjid}")
 
         if not options.skip_seg:
@@ -143,7 +125,7 @@ def main():
             run(['kidney_t1_seg',
                  '--input', options.output,
                  '--subjid', subjid,
-                 '--t1', 'renal_preproc/nifti/*T1Map_LongT1_MoCo_GR_IRa.nii.gz',
+                 '--t1', 'renal_preproc/t1_out/*_t1map.nii*',
                  '--model', model,
                  '--output', options.output,
                  '--outprefix', 't1_seg/seg_kidney'], logfile=f'{outdir}/t1_seg_logfile.txt')
@@ -169,7 +151,10 @@ def main():
             link(renal_outdir, "t2star_out/*_exp_t2star_map", qp_data_dir, "t2star_exp")
             link(renal_outdir, "t2star_out/*_loglin_r2star_map", qp_data_dir, "r2star_loglin")
             link(renal_outdir, "t2star_out/*_exp_r2star_map", qp_data_dir, "r2star_exp")
-            link(renal_outdir, "nifti/*T1Map_LongT1_MoCo_GR_IRa", qp_data_dir, "t1")
+            link(renal_outdir, "tkv_out/*_right_kidney", qp_data_dir, "seg_kidney_r_t2w")
+            link(renal_outdir, "tkv_out/*_left_kidney", qp_data_dir, "seg_kidney_l_t2w")
+            link(renal_outdir, "tkv_out/*_mask", qp_data_dir, "seg_kidney_t2w")
+            link(renal_outdir, "t1_out/*_t1map", qp_data_dir, "t1", multiple_ok=True)
 
             print(f"DONE Linking segmentation and data sets for subject {subjid}")
 
