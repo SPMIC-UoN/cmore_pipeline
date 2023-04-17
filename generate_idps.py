@@ -10,12 +10,16 @@ import sys
 import pandas as pd
 
 LOG = logging.getLogger(__name__)
-#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
+
+MEAN_PARAM="Interquartile mean"
+#MEAN_PARAM="Mean"
 
 class ArgumentParser(argparse.ArgumentParser):
     def __init__(self, **kwargs):
         argparse.ArgumentParser.__init__(self, prog="cmore_idps", add_help=True, **kwargs)
         self.add_argument("--input", required=True, help="Input directory containing subject dirs")
+        self.add_argument("--statspath", help="Subject dir subfolder containing stats", default="stats")
         self.add_argument("--output", help="Output filename", default="cmore_idps.csv")
 
 # IDP definition. Mapping from:
@@ -38,8 +42,6 @@ class ArgumentParser(argparse.ArgumentParser):
 # organ but can also provide data for segmentations targeting a 
 # different organ
 #
-# FIXME add all organ volumes from dixon (7) + pancreas t1w (1)
-# FIXME remove loglin fit from liver
 IDPDEF = {
     "kidney_medulla_l" : {
         "t1" : {
@@ -93,10 +95,25 @@ IDPDEF = {
             ]
         }
     },
+    "kidney_l" : {
+        "t2w" : {
+            "" : []
+        }
+    },
+    "kidney_r" : {
+        "t2w" : {
+            "" : []
+        }
+    },
+    "kidney" : {
+        "t2w" : {
+            "" : []
+        }
+    },
 }
 
 def get_seg_vols(options, subjid):
-    vols_tsv = os.path.join(options.input, subjid, "seg_volumes.tsv")
+    vols_tsv = os.path.join(options.input, subjid, options.statspath, "seg_volumes.tsv")
     LOG.debug(f"Looking for segmentation volumes for subject {subjid} in {vols_tsv}")
     if os.path.exists(vols_tsv):
         return pd.read_csv(vols_tsv, sep="\t", index_col=0)
@@ -166,7 +183,7 @@ def main():
                         LOG.debug(f"Parameter: {paramdef}")
                         stats_dataset = f"{organ}_{seg}_stats.tsv"
                         if stats_dataset not in loaded_stats:
-                            stats_tsv = os.path.join(options.input, subjid, stats_dataset)
+                            stats_tsv = os.path.join(options.input, subjid, options.statspath, stats_dataset)
                             if os.path.exists(stats_tsv):
                                 LOG.debug(f"Loading stats from: {stats_tsv}")
                                 loaded_stats[stats_dataset] = pd.read_csv(stats_tsv, sep="\s*\t\s*", engine="python", index_col=0)
@@ -185,7 +202,7 @@ def main():
                             LOG.debug(f"Segmentation empty")
                             mean, std, median = "", "", ""
                         elif col_name in list(loaded_stats[stats_dataset].columns):
-                            mean = loaded_stats[stats_dataset][col_name]["Mean"]
+                            mean = loaded_stats[stats_dataset][col_name][MEAN_PARAM]
                             std = loaded_stats[stats_dataset][col_name]["Std"]
                             median = loaded_stats[stats_dataset][col_name]["Median"]
                         else:
