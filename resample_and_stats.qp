@@ -1,4 +1,8 @@
-OutputFolder: OUTDIR/stats
+OutputFolder: OUTDIR
+OutputSubFolder: stats
+InputFolder: OUTDIR
+InputSubFolder: qpdata
+InputUseCaseId: True
 Debug: False
 
 Processing:
@@ -151,4 +155,4 @@ Processing:
 
 Cases:
   SUBJID:
-    Folder: OUTDIR/SUBJID/qpdata/
+
